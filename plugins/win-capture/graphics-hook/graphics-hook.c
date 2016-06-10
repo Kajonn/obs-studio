@@ -385,8 +385,16 @@ static inline bool attempt_hook(void)
 
 static inline void capture_loop(void)
 {
+
 	while (!attempt_hook())
 		Sleep(40);
+
+	//Run for 4 seconds and try to gain hooks 
+	//to prevent delays
+	for (size_t n = 0; n<100; n++) {
+		attempt_hook();
+		Sleep(40);
+	}
 
 	for (size_t n = 0; !stop_loop; n++) {
 		/* this causes it to check every 4 seconds, but still with
