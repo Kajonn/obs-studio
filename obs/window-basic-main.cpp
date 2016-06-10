@@ -47,6 +47,7 @@
 #include "display-helpers.hpp"
 #include "volume-control.hpp"
 #include "remote-text.hpp"
+#include "command-socket.hpp"
 
 #include "ui_OBSBasic.h"
 
@@ -1098,6 +1099,12 @@ void OBSBasic::OBSInit()
 	}
 
 	ui->mainSplitter->setSizes(defSizes);
+
+	if (opt_use_remote_port) 
+	{
+		//Start a connection which listens to commands
+		_commandSocket.reset(new CommandSocket(this, opt_remote_port));
+	}
 }
 
 void OBSBasic::InitHotkeys()
@@ -3474,12 +3481,12 @@ void OBSBasic::StreamingStop(int code)
 	}
 }
 
-void OBSBasic::StartRecording()
+void OBSBasic::StartRecording(QString fileName)
 {
 	SaveProject();
-
+	blog(LOG_INFO, "Record from socket to file %s", fileName.toStdString().c_str());
 	if (!outputHandler->RecordingActive())
-		outputHandler->StartRecording();
+		outputHandler->StartRecording(fileName);
 }
 
 void OBSBasic::StopRecording()
@@ -3506,6 +3513,11 @@ void OBSBasic::RecordingStart()
 	}
 
 	blog(LOG_INFO, RECORDING_START);
+
+	if (_commandSocket)
+	{
+		_commandSocket->recordingStarted();
+	}
 }
 
 void OBSBasic::RecordingStop(int code)
@@ -3514,26 +3526,52 @@ void OBSBasic::RecordingStop(int code)
 	ui->recordButton->setText(QTStr("Basic.Main.StartRecording"));
 	blog(LOG_INFO, RECORDING_STOP);
 
-	if (code == OBS_OUTPUT_UNSUPPORTED) {
-		QMessageBox::information(this,
+	if (_commandSocket)
+	{
+		_commandSocket->recordingStopped();
+	}
+
+	if (code != OBS_OUTPUT_SUCCESS)
+	{
+		QString errorMessage;
+		QString errorTitle;
+		if (code == OBS_OUTPUT_UNSUPPORTED) {
+			errorMessage = QTStr("Output.RecordFail.Unsupported");
+			errorTitle = QTStr("Output.RecordFail.Title");
+			QMessageBox::information(this,
 				QTStr("Output.RecordFail.Title"),
-				QTStr("Output.RecordFail.Unsupported"));
+				errorMessage);
 
-	} else if (code == OBS_OUTPUT_NO_SPACE) {
-		QMessageBox::information(this,
+		}
+		else if (code == OBS_OUTPUT_NO_SPACE) {
+			errorMessage = QTStr("Output.RecordNoSpace.Msg");
+			errorTitle = QTStr("Output.RecordNoSpace.Title");
+			QMessageBox::information(this,
 				QTStr("Output.RecordNoSpace.Title"),
-				QTStr("Output.RecordNoSpace.Msg"));
+				errorMessage);
 
-	} else if (code != OBS_OUTPUT_SUCCESS) {
+		}
+		else if (code != OBS_OUTPUT_SUCCESS) {
+			errorMessage = QTStr("Output.RecordError.Msg");
+			errorTitle = QTStr("Output.RecordError.Title");
+		}
+
+		if (_commandSocket)
+		{
+			_commandSocket->sendErrorMsg(errorTitle);
+		}
+
 		QMessageBox::information(this,
-				QTStr("Output.RecordError.Title"),
-				QTStr("Output.RecordError.Msg"));
+			errorTitle,
+			errorMessage);
+
 	}
 
 	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(true);
 		App()->DecrementSleepInhibition();
 	}
+
 }
 
 void OBSBasic::on_streamButton_clicked()

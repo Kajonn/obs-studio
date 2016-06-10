@@ -38,6 +38,7 @@
 class QListWidgetItem;
 class VolControl;
 class QNetworkReply;
+class CommandSocket;
 
 #include "ui_OBSBasic.h"
 
@@ -113,6 +114,8 @@ private:
 
 	OBSService service;
 	std::unique_ptr<BasicOutputHandler> outputHandler;
+
+	std::unique_ptr<CommandSocket> _commandSocket;
 
 	gs_vertbuffer_t *box = nullptr;
 	gs_vertbuffer_t *boxLeft = nullptr;
@@ -291,7 +294,7 @@ public slots:
 	void StreamingStart();
 	void StreamingStop(int errorcode);
 
-	void StartRecording();
+	void StartRecording(QString fileName = "");
 	void StopRecording();
 
 	void RecordingStart();

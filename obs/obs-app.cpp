@@ -62,6 +62,8 @@ bool opt_start_recording = false;
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
+int opt_remote_port;
+bool opt_use_remote_port;
 
 QObject *CreateShortcutFilter()
 {
@@ -1773,6 +1775,10 @@ int main(int argc, char *argv[])
 
 		} else if (arg_is(argv[i], "--scene", nullptr)) {
 			if (++i < argc) opt_starting_scene = argv[i];
+		}
+		else if (arg_is(argv[i], "--port", nullptr)) {
+			if (++i < argc) opt_remote_port = std::stoi(argv[i]);
+			opt_use_remote_port = true;
 		}
 	}
 

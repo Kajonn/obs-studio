@@ -169,7 +169,7 @@ struct SimpleOutput : BasicOutputHandler {
 	void LoadStreamingPreset_h264(const char *encoder);
 
 	virtual bool StartStreaming(obs_service_t *service) override;
-	virtual bool StartRecording() override;
+	virtual bool StartRecording(QString fileName) override;
 	virtual void StopStreaming() override;
 	virtual void ForceStopStreaming() override;
 	virtual void StopRecording() override;
@@ -545,7 +545,7 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 	return false;
 }
 
-bool SimpleOutput::StartRecording()
+bool SimpleOutput::StartRecording(QString fileName)
 {
 	if (usingRecordingPreset) {
 		if (!ffmpegOutput)
@@ -581,17 +581,21 @@ bool SimpleOutput::StartRecording()
 
 	os_closedir(dir);
 
-	string strPath;
-	strPath += path;
+	string strPath = fileName.toStdString();
+	if (strPath.empty())
+	{
+		strPath += path;
 
-	char lastChar = strPath.back();
-	if (lastChar != '/' && lastChar != '\\')
-		strPath += "/";
+		char lastChar = strPath.back();
+		if (lastChar != '/' && lastChar != '\\')
+			strPath += "/";
 
-	strPath += GenerateSpecifiedFilename(ffmpegOutput ? "avi" : format,
+		strPath += GenerateSpecifiedFilename(ffmpegOutput ? "avi" : format,
 			noSpace, filenameFormat);
-	if (!overwriteIfExists)
-		FindBestFilename(strPath, noSpace);
+		if (!overwriteIfExists)
+			FindBestFilename(strPath, noSpace);
+	}
+
 
 	SetupOutputs();
 
@@ -668,7 +672,7 @@ struct AdvancedOutput : BasicOutputHandler {
 	int GetAudioBitrate(size_t i) const;
 
 	virtual bool StartStreaming(obs_service_t *service) override;
-	virtual bool StartRecording() override;
+	virtual bool StartRecording(QString fileName) override;
 	virtual void StopStreaming() override;
 	virtual void ForceStopStreaming() override;
 	virtual void StopRecording() override;
@@ -1069,7 +1073,7 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 	return false;
 }
 
-bool AdvancedOutput::StartRecording()
+bool AdvancedOutput::StartRecording(QString fileName)
 {
 	const char *path;
 	const char *recFormat;
@@ -1104,28 +1108,38 @@ bool AdvancedOutput::StartRecording()
 				"FFFileNameWithoutSpace" :
 				"RecFileNameWithoutSpace");
 
-		os_dir_t *dir = path ? os_opendir(path) : nullptr;
-
-		if (!dir) {
-			QMessageBox::information(main,
-					QTStr("Output.BadPath.Title"),
-					QTStr("Output.BadPath.Text"));
-			return false;
+		string strPath;
+		if (!fileName.isEmpty())
+		{
+			fileName = fileName.trimmed();
+			strPath = fileName.toStdString() + "." + string(recFormat);
 		}
 
-		os_closedir(dir);
+		if (fileName.isEmpty())
+		{
+			os_dir_t *dir = path ? os_opendir(path) : nullptr;
 
-		string strPath;
-		strPath += path;
+			if (!dir) {
+				QMessageBox::information(main,
+					QTStr("Output.BadPath.Title"),
+					QTStr("Output.BadPath.Text"));
+				return false;
+			}
 
-		char lastChar = strPath.back();
-		if (lastChar != '/' && lastChar != '\\')
-			strPath += "/";
+			os_closedir(dir);
 
-		strPath += GenerateSpecifiedFilename(recFormat, noSpace,
-							filenameFormat);
-		if (!overwriteIfExists)
-			FindBestFilename(strPath, noSpace);
+			strPath += path;
+
+			char lastChar = strPath.back();
+			if (lastChar != '/' && lastChar != '\\')
+				strPath += "/";
+
+			strPath += GenerateSpecifiedFilename(recFormat, noSpace,
+				filenameFormat);
+			if (!overwriteIfExists)
+				FindBestFilename(strPath, noSpace);
+		}
+		blog(LOG_INFO, "Recording to %s", strPath.c_str());
 
 		obs_data_t *settings = obs_data_create();
 		obs_data_set_string(settings,

@@ -30,6 +30,7 @@ else()
 endif()
 
 find_package(Qt5Widgets ${FIND_MODE})
+find_package(Qt5Network ${FIND_MODE})
 
 if(NOT Qt5Widgets_FOUND)
 	if (ENABLE_UI)
@@ -134,7 +135,8 @@ set(obs_SOURCES
 	source-label.cpp
 	remote-text.cpp
 	audio-encoders.cpp
-	qt-wrappers.cpp)
+	qt-wrappers.cpp
+	command-socket.cpp)
 
 set(obs_HEADERS
 	obs-app.hpp
@@ -177,7 +179,8 @@ set(obs_HEADERS
 	source-label.hpp
 	remote-text.hpp
 	audio-encoders.hpp
-	qt-wrappers.hpp)
+	qt-wrappers.hpp
+	command-socket.hpp)
 
 set(obs_UI
 	forms/NameDialog.ui
@@ -219,6 +222,7 @@ target_link_libraries(obs
 	libobs
 	libff
 	Qt5::Widgets
+	Qt5::Network
 	${LIBCURL_LIBRARIES}
 	${obs_PLATFORM_LIBRARIES})
 
