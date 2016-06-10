@@ -4,6 +4,17 @@ project(obs-studio)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
+if(MSVC)
+set(DepsPath "${DEPS_PATH}")
+set(FFmpegPath "${DepsPath}/${OBS_DEP_TYPE}/include")
+set(x264Path "${DepsPath}/${OBS_DEP_TYPE}/include")
+set(curlPath "${DepsPath}/${OBS_DEP_TYPE}/include")
+set(LibfdkPath "${DepsPath}/${OBS_DEP_TYPE}/include")
+set(Libavcodec_DIR "${DepsPath}/${OBS_DEP_TYPE}/include")
+set(ZLIB_INCLUDE_DIR "${DepsPath}/${OBS_DEP_TYPE}/include")
+set(ZLIB_LIB "${DepsPath}/${OBS_DEP_TYPE}/bin/zlib.lib")
+endif()
+
 include(ObsHelpers)
 include(ObsCpack)
 
