@@ -717,9 +717,17 @@ static bool init_hook(struct game_capture *gc)
 	if (gc->config.capture_any_fullscreen) {
 		struct dstr name = {0};
 		if (get_window_exe(&name, gc->next_window)) {
-			info("attempting to hook fullscreen process: %s",
+			if (strcmp(name.array, "explorer.exe") == 0)
+			{
+				dstr_free(&name);
+				//Do not hook explorer.exe
+				return false;
+			}
+			else {
+				info("attempting to hook fullscreen process: %s",
 					name.array);
-			dstr_free(&name);
+				dstr_free(&name);
+			}
 		}
 	} else {
 		info("attempting to hook process: %s", gc->config.executable);
