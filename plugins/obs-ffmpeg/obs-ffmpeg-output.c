@@ -129,21 +129,38 @@ static void parse_params(AVCodecContext *context, char **opts)
 	if (!context || !context->priv_data)
 		return;
 
-	while (*opts) {
-		char *opt = *opts;
-		char *assign = strchr(opt, '=');
+	blog(LOG_INFO, "Setting extra AVCodec settings: '%s'", *opts);
 
-		if (assign) {
-			char *name = opt;
-			char *value;
+	char *delims = ", ;:";	
+	char *name = strtok(*opts, "=");
+	char *value = strtok(NULL, delims);
+	int error = 0;
 
-			*assign = 0;
-			value = assign+1;
+	while (name) {
 
-			av_opt_set(context->priv_data, name, value, 0);
+		if (value) {
+			error = av_opt_set(context, name, value, 0);
+			if (error == AVERROR_OPTION_NOT_FOUND) {
+				error = av_opt_set(context->priv_data, name, value, 0);
+			}
+
+			if ( error ) {
+				blog(LOG_WARNING, "Error when setting option '%s' with value '%s'",
+					name, value);
+			
+				if (error == AVERROR_OPTION_NOT_FOUND) {
+					blog(LOG_WARNING, "Option '%s' not found.", name, value);
+				}
+			}
+		}
+		else {
+			blog(LOG_WARNING, "Missing value for option '%s'", name);
 		}
 
-		opts++;
+
+
+		name = strtok(NULL, "=");
+		value = strtok(NULL, delims);
 	}
 }
 
